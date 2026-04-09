@@ -1,4 +1,4 @@
-import { Search, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 interface NavbarProps {
   favoritesCount: number;
@@ -6,25 +6,31 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ favoritesCount, setPage }: NavbarProps) => (
-    <nav className="sticky top-0 z-50 glass border-b border-white/10 px-4 py-3">
+    <nav className="sticky top-0 z-50 bg-[#111111] border-b border-white/5 px-4 py-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setPage('home')}>
-                <div className="bg-brand p-1.5 rounded-lg">
-                    <Search size={24} className="text-dark" strokeWidth={3} />
-                </div>
-                <h1 className="text-xl font-bold tracking-tighter italic">AUTO<span className="text-brand">HUNTER</span></h1>
+                <h1 className="text-2xl font-bold tracking-tight">Auto<span className="text-brand">Hunter</span></h1>
             </div>
-            <button 
-                onClick={() => setPage('favorites')}
-                className="relative p-2 hover:bg-white/10 rounded-full transition-colors"
-            >
-                <Heart size={24} className={favoritesCount > 0 ? "fill-brand text-brand" : "text-white"} />
-                {favoritesCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-brand text-dark text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-dark">
-                        {favoritesCount}
-                    </span>
-                )}
-            </button>
+            <div className="flex items-center gap-6">
+                <button 
+                    onClick={() => setPage('home')}
+                    className="text-sm font-medium text-slate-300 hover:text-white transition-colors hidden sm:block"
+                >
+                    Home
+                </button>
+                <button 
+                    onClick={() => setPage('favorites')}
+                    className="relative flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                >
+                    <Heart size={20} className={favoritesCount > 0 ? "fill-brand text-brand" : "text-white"} />
+                    <span className="hidden sm:inline">Favoriti</span>
+                    {favoritesCount > 0 && (
+                        <span className="absolute -top-2 -right-3 bg-brand text-dark text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                            {favoritesCount}
+                        </span>
+                    )}
+                </button>
+            </div>
         </div>
     </nav>
 );
