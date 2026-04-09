@@ -8,7 +8,11 @@ import { Car } from './types';
 
 export default function App() {
     const [page, setPage] = useState('home');
-    const [query, setQuery] = useState('');
+    
+    // Odvojeni state za input polje i za aktivnu pretragu
+    const [searchInput, setSearchInput] = useState('');
+    const [activeQuery, setActiveQuery] = useState('');
+    
     const [results, setResults] = useState<Car[]>([]);
     const [loading, setLoading] = useState(false);
     const [favorites, setFavorites] = useState<Car[]>(() => JSON.parse(localStorage.getItem('favs') || '[]'));
@@ -26,23 +30,34 @@ export default function App() {
         country: [] as string[]
     });
 
+    // Čuvanje favorita u localStorage
     useEffect(() => {
         localStorage.setItem('favs', JSON.stringify(favorites));
     }, [favorites]);
 
+    // Glavna funkcija za pretragu (okida se na Enter, klik dugmeta ili klik na popularnu pretragu)
     const handleSearch = (e?: React.FormEvent, overrideQuery?: string) => {
         if (e) e.preventDefault();
-        const searchQuery = overrideQuery !== undefined ? overrideQuery : query;
-        if (!searchQuery && page === 'home') return;
         
-        if (overrideQuery !== undefined) setQuery(overrideQuery);
+        const queryToSearch = overrideQuery !== undefined ? overrideQuery : searchInput;
+        
+        // Ako smo na početnoj i nema upita, ne radi ništa
+        if (!queryToSearch.trim() && page === 'home') return;
+        
+        if (overrideQuery !== undefined) {
+            setSearchInput(overrideQuery);
+        }
         
         setLoading(true);
         setPage('results');
         
+        // Simulacija mrežnog zahtjeva (700-1000ms)
+        const delay = Math.floor(Math.random() * 300) + 700;
+        
         setTimeout(() => {
+            setActiveQuery(queryToSearch.trim());
             setLoading(false);
-        }, 800);
+        }, delay);
     };
 
     const toggleFavorite = (car: Car) => {
@@ -67,11 +82,19 @@ export default function App() {
         }));
     };
 
+    // Real-time filtriranje i sortiranje
     const filteredAndSortedResults = useMemo(() => {
         const baseList = page === 'favorites' ? favorites : MOCK_CARS;
         
         let filtered = baseList.filter(car => {
-            const matchesQuery = query === '' || car.make.toLowerCase().includes(query.toLowerCase()) || car.model.toLowerCase().includes(query.toLowerCase());
+            const searchLower = activeQuery.toLowerCase();
+            const carFullName = `${car.make} ${car.model}`.toLowerCase();
+            
+            const matchesQuery = activeQuery === '' || 
+                                 car.make.toLowerCase().includes(searchLower) || 
+                                 car.model.toLowerCase().includes(searchLower) ||
+                                 carFullName.includes(searchLower);
+                                 
             const matchesPrice = car.price <= filters.priceMax;
             const matchesYear = car.year >= filters.yearFrom && car.year <= filters.yearTo;
             const matchesKm = car.km <= filters.kmMax;
@@ -88,7 +111,7 @@ export default function App() {
             if (sortBy === 'km') return a.km - b.km;
             return 0;
         });
-    }, [query, filters, favorites, sortBy, page]);
+    }, [activeQuery, filters, favorites, sortBy, page]);
 
     const popularSearches = [
         { title: "Golf 7", query: "Golf 7" },
@@ -98,6 +121,17 @@ export default function App() {
         { title: "Passat", query: "Passat" },
         { title: "CLA 200", query: "CLA" }
     ];
+
+    const resetFilters = () => {
+        setFilters({
+            priceMax: 100000, 
+            yearFrom: 2000, 
+            yearTo: new Date().getFullYear(), 
+            kmMax: 300000, 
+            fuel: [], 
+            country: []
+        });
+    };
 
     return (
         <div className="min-h-screen pb-20">
@@ -127,8 +161,8 @@ export default function App() {
                                 type="text"
                                 placeholder="Unesi marku i model vozila... (npr. Golf 7)"
                                 className="w-full bg-surface border-2 border-white/10 rounded-2xl py-5 pl-14 pr-36 text-lg focus:outline-none focus:border-brand transition-all accent-shadow placeholder:text-slate-500"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
                             />
                             <button 
                                 type="submit"
@@ -170,9 +204,13 @@ export default function App() {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                         <div>
                             <h2 className="text-3xl font-bold">
-                                {page === 'favorites' ? 'Moji Favoriti' : `Rezultati za "${query}"`}
+                                {page === 'favorites' ? 'Moji Favoriti' : `Rezultati za "${activeQuery}"`}
                             </h2>
-                            {!loading && <p className="text-slate-400 mt-1 font-medium">Pronađeno <strong className="text-white">{filteredAndSortedResults.length}</strong> oglasa</p>}
+                            {!loading && (
+                                <p className="text-slate-400 mt-1 font-medium">
+                                    Pronađeno <strong className="text-white">{filteredAndSortedResults.length}</strong> oglasa
+                                </p>
+                            )}
                         </div>
                         
                         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -280,7 +318,7 @@ export default function App() {
                                     </div>
                                     
                                     <button 
-                                        onClick={() => setFilters({priceMax: 100000, yearFrom: 2000, yearTo: new Date().getFullYear(), kmMax: 300000, fuel: [], country: []})}
+                                        onClick={resetFilters}
                                         className="w-full bg-white/5 text-white font-medium py-2.5 rounded-xl text-sm mt-2 hover:bg-white/10 transition-colors"
                                     >
                                         Poništi filtere
@@ -294,7 +332,7 @@ export default function App() {
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-32">
                                     <Loader2 size={48} className="text-brand animate-spin mb-6" />
-                                    <p className="text-slate-400 animate-pulse font-medium text-lg">Pretražujemo Mobile.de, Willhaben, AutoScout24...</p>
+                                    <p className="text-slate-400 animate-pulse font-medium text-lg">Pretražujemo baze podataka...</p>
                                 </div>
                             ) : filteredAndSortedResults.length > 0 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -315,8 +353,9 @@ export default function App() {
                                     <p className="text-slate-400 mb-8 max-w-md mx-auto">Nismo pronašli nijedan oglas koji odgovara vašim kriterijumima. Pokušajte proširiti filtere ili promijeniti pretragu.</p>
                                     <button 
                                         onClick={() => {
-                                            setFilters({priceMax: 100000, yearFrom: 2000, yearTo: new Date().getFullYear(), kmMax: 300000, fuel: [], country: []});
-                                            setQuery('');
+                                            resetFilters();
+                                            setSearchInput('');
+                                            setActiveQuery('');
                                         }} 
                                         className="bg-brand text-dark font-bold px-6 py-3 rounded-xl hover:bg-[#00b359] transition-colors inline-block"
                                     >
