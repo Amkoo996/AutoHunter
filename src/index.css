@@ -1,10 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #00cc66;
+  --color-dark: #0f0f0f;
+  --color-surface: #1a1a1a;
+  --color-header: #111111;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
 
 @layer base {
   body {
-    @apply bg-[#0f0f0f] text-slate-50 font-sans;
+    @apply bg-dark text-slate-50 font-sans;
   }
 }
 
