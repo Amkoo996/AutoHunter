@@ -7,6 +7,7 @@ export interface Car {
   year: number;
   km: number;
   fuel: string;
+  power: number;
   country: string;
   city: string;
   source: string;
